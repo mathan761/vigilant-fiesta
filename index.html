@@ -79,7 +79,6 @@
     </div>
 
 <script>
-    // Укажите URL вашего бэкенда.
     const BACKEND_URL = 'http://127.0.0.1:8001';
 
     const authBtn = document.getElementById('auth-btn');
@@ -87,23 +86,35 @@
     const statusDiv = document.getElementById('status');
     const errorDiv = document.getElementById('error-message');
 
-    // Проверяем, загружен ли скрипт Telegram Mini App
-    const webApp = window.Telegram?.WebApp;
-
-    // Сразу привязываем обработчики к кнопкам.
-    // Логика проверки initData теперь внутри функций.
-    authBtn.addEventListener('click', authenticate);
-    protectedBtn.addEventListener('click', checkProtected);
-    
-    // Выводим статус инициализации Mini App сразу
-    if (webApp) {
-        statusDiv.textContent = '✅ Telegram Mini App успешно инициализировано.';
-    } else {
-        errorDiv.textContent = '❌ Ошибка: Код запущен вне Telegram Mini App.';
+    function waitForWebApp() {
+        return new Promise(resolve => {
+            const check = () => {
+                if (window.Telegram?.WebApp) {
+                    resolve(window.Telegram.WebApp);
+                } else {
+                    setTimeout(check, 100);
+                }
+            };
+            check();
+        });
     }
 
-    async function authenticate() {
-        if (!webApp || !webApp.initData) {
+    async function main() {
+        const webApp = await waitForWebApp();
+
+        if (webApp.initData) {
+            statusDiv.textContent = '✅ Telegram Mini App успешно инициализировано.';
+        } else {
+            errorDiv.textContent = '❌ initData отсутствует. Убедитесь, что запускаете приложение через Telegram.';
+            // Оставляем кнопки активными, чтобы можно было проверить логику
+        }
+
+        authBtn.addEventListener('click', () => authenticate(webApp));
+        protectedBtn.addEventListener('click', () => checkProtected(webApp));
+    }
+
+    async function authenticate(webApp) {
+        if (!webApp.initData) {
             errorDiv.textContent = '❌ Ошибка: initData отсутствует.';
             return;
         }
@@ -135,12 +146,7 @@
         }
     }
 
-    async function checkProtected() {
-        if (!webApp) {
-             errorDiv.textContent = '❌ Ошибка: Код запущен вне Telegram Mini App.';
-             return;
-        }
-        
+    async function checkProtected(webApp) {
         statusDiv.textContent = 'Проверка защищенного эндпоинта...';
         errorDiv.textContent = '';
 
@@ -164,6 +170,8 @@
             statusDiv.textContent = '';
         }
     }
+
+    main();
 </script>
 </body>
 </html>
