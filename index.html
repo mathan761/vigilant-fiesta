@@ -78,88 +78,92 @@
         <div id="error-message"></div>
     </div>
 
-    <script>
-        // Укажите URL вашего бэкенда. Исправленный порт.
-        const BACKEND_URL = 'http://127.0.0.1:8001';
+<script>
+    // Укажите URL вашего бэкенда.
+    const BACKEND_URL = 'http://127.0.0.1:8001';
 
-        const authBtn = document.getElementById('auth-btn');
-        const protectedBtn = document.getElementById('protected-btn');
-        const statusDiv = document.getElementById('status');
-        const errorDiv = document.getElementById('error-message');
-        let webApp = null;
+    const authBtn = document.getElementById('auth-btn');
+    const protectedBtn = document.getElementById('protected-btn');
+    const statusDiv = document.getElementById('status');
+    const errorDiv = document.getElementById('error-message');
 
-        function initializeApp() {
-            webApp = window.Telegram?.WebApp;
-            
-            if (!webApp) {
-                setTimeout(initializeApp, 100);
-                return;
-            }
+    // Проверяем, загружен ли скрипт Telegram Mini App
+    const webApp = window.Telegram?.WebApp;
 
-            if (!webApp.initData) {
-                errorDiv.textContent = '❌ Ошибка: initData отсутствует. Убедитесь, что запускаете приложение из клиента Telegram.';
-                return;
-            }
+    // Сразу привязываем обработчики к кнопкам.
+    // Логика проверки initData теперь внутри функций.
+    authBtn.addEventListener('click', authenticate);
+    protectedBtn.addEventListener('click', checkProtected);
+    
+    // Выводим статус инициализации Mini App сразу
+    if (webApp) {
+        statusDiv.textContent = '✅ Telegram Mini App успешно инициализировано.';
+    } else {
+        errorDiv.textContent = '❌ Ошибка: Код запущен вне Telegram Mini App.';
+    }
 
-            authBtn.addEventListener('click', authenticate);
-            protectedBtn.addEventListener('click', checkProtected);
-            statusDiv.textContent = '✅ Telegram Mini App успешно инициализировано.';
+    async function authenticate() {
+        if (!webApp || !webApp.initData) {
+            errorDiv.textContent = '❌ Ошибка: initData отсутствует.';
+            return;
         }
+        
+        statusDiv.textContent = 'Отправка данных на бэкенд...';
+        errorDiv.textContent = '';
 
-        async function authenticate() {
-            statusDiv.textContent = 'Отправка данных на бэкенд...';
-            errorDiv.textContent = '';
+        try {
+            const response = await fetch(`${BACKEND_URL}/auth/signin`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ init_data: webApp.initData }),
+            });
 
-            try {
-                const response = await fetch(`${BACKEND_URL}/auth/signin`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include',
-                    body: JSON.stringify({ init_data: webApp.initData }),
-                });
-
-                if (response.ok) {
-                    statusDiv.textContent = '✅ Авторизация успешна!';
-                    errorDiv.textContent = '';
-                } else {
-                    const error = await response.json();
-                    errorDiv.textContent = `❌ Ошибка авторизации: ${error.detail || 'Неизвестная ошибка'}`;
-                    statusDiv.textContent = '';
-                }
-            } catch (error) {
-                errorDiv.textContent = `❌ Не удалось подключиться к бэкенду. ${error.message}`;
+            if (response.ok) {
+                statusDiv.textContent = '✅ Авторизация успешна!';
+                errorDiv.textContent = '';
+            } else {
+                const error = await response.json();
+                errorDiv.textContent = `❌ Ошибка авторизации: ${error.detail || 'Неизвестная ошибка'}`;
                 statusDiv.textContent = '';
             }
+        } catch (error) {
+            errorDiv.textContent = `❌ Не удалось подключиться к бэкенду. ${error.message}`;
+            statusDiv.textContent = '';
         }
+    }
 
-        async function checkProtected() {
-            statusDiv.textContent = 'Проверка защищенного эндпоинта...';
-            errorDiv.textContent = '';
+    async function checkProtected() {
+        if (!webApp) {
+             errorDiv.textContent = '❌ Ошибка: Код запущен вне Telegram Mini App.';
+             return;
+        }
+        
+        statusDiv.textContent = 'Проверка защищенного эндпоинта...';
+        errorDiv.textContent = '';
 
-            try {
-                const response = await fetch(`${BACKEND_URL}/auth/protected`, {
-                    method: 'GET',
-                    credentials: 'include',
-                });
+        try {
+            const response = await fetch(`${BACKEND_URL}/auth/protected`, {
+                method: 'GET',
+                credentials: 'include',
+            });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    statusDiv.textContent = `✅ Доступ разрешен! Сообщение: "${data.message}"`;
-                    errorDiv.textContent = '';
-                } else {
-                    const error = await response.json();
-                    errorDiv.textContent = `❌ Отказано в доступе. Ошибка: ${error.detail || 'Неизвестная ошибка'}`;
-                    statusDiv.textContent = '';
-                }
-            } catch (error) {
-                errorDiv.textContent = `❌ Не удалось подключиться к бэкенду. ${error.message}`;
+            if (response.ok) {
+                const data = await response.json();
+                statusDiv.textContent = `✅ Доступ разрешен! Сообщение: "${data.message}"`;
+                errorDiv.textContent = '';
+            } else {
+                const error = await response.json();
+                errorDiv.textContent = `❌ Отказано в доступе. Ошибка: ${error.detail || 'Неизвестная ошибка'}`;
                 statusDiv.textContent = '';
             }
+        } catch (error) {
+            errorDiv.textContent = `❌ Не удалось подключиться к бэкенду. ${error.message}`;
+            statusDiv.textContent = '';
         }
-
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    </script>
+    }
+</script>
 </body>
 </html>
