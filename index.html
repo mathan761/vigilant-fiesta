@@ -1,199 +1,201 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Web App Auth Test</title>
-    <!-- Подключаем Tailwind CSS для красивого дизайна -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Необходимый скрипт для доступа к Telegram.WebApp -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-        @keyframes fade-in {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        .animate-fade-in {
-            animation: fade-in 0.3s ease-out forwards;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Web App Auth Test</title>
+    <!-- Подключаем Tailwind CSS для красивого дизайна -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Необходимый скрипт для доступа к Telegram.WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Telegram Web App Auth Test</h1>
-        <p class="text-gray-600 text-center mb-8">
-            Этот клиент поможет вам проверить, как ваш бэкенд обрабатывает `initData` из Telegram.
-        </p>
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Telegram Web App Auth Test</h1>
+        <p class="text-gray-600 text-center mb-8">
+            Этот клиент поможет вам проверить, как ваш бэкенд обрабатывает `initData` из Telegram.
+        </p>
 
-        <!-- Form for input -->
-        <div class="space-y-6 mb-8">
-            <div>
-                <label for="baseUrl" class="block text-sm font-medium text-gray-700 mb-1">
-                    Базовый URL бэкенда
-                </label>
-                <input type="url" id="baseUrl" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="http://127.0.0.1:8001">
-            </div>
-            <div>
-                <label for="initData" class="block text-sm font-medium text-gray-700 mb-1">
-                    Ваш initData из Telegram Web App
-                </label>
-                <textarea id="initData" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="Получите initData из Telegram.">
-                </textarea>
-                <p class="text-xs text-gray-500 mt-2">
-                    Вставьте сюда полный initData, полученный из `window.Telegram.WebApp.initData`. Если вы открыли эту страницу в самом Web App, она будет заполнена автоматически.
-                </p>
-            </div>
+        <!-- Form for input -->
+        <div class="space-y-6 mb-8">
+            <div>
+                <label for="baseUrl" class="block text-sm font-medium text-gray-700 mb-1">
+                    Базовый URL бэкенда
+                </label>
+                <input type="url" id="baseUrl" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="http://127.0.0.1:8001">
+            </div>
+            <div>
+                <label for="initData" class="block text-sm font-medium text-gray-700 mb-1">
+                    Ваш initData из Telegram Web App
+                </label>
+                <textarea id="initData" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="Получите initData из Telegram.">
+                </textarea>
+                <p class="text-xs text-gray-500 mt-2">
+                    Вставьте сюда полный initData, полученный из `window.Telegram.WebApp.initData`. Если вы открыли эту страницу в самом Web App, она будет заполнена автоматически.
+                </p>
+            </div>
 
-            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <button id="authBtn" class="flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-300 transform hover:scale-105">
-                    Отправить initData
-                </button>
-                <button id="protectedBtn" class="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition duration-300 transform hover:scale-105">
-                    Проверить защищённый роут
-                </button>
-            </div>
-        </div>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <button id="authBtn" class="flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-300 transform hover:scale-105">
+                    Отправить initData
+                </button>
+                <button id="protectedBtn" class="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition duration-300 transform hover:scale-105">
+                    Проверить защищённый роут
+                </button>
+            </div>
+        </div>
 
-        <!-- Result area -->
-        <div id="result" class="bg-gray-50 rounded-lg p-6 shadow-inner transition-all duration-300">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4">Результат:</h2>
-            <pre id="resultPre" class="bg-gray-100 text-gray-800 p-4 rounded-md overflow-x-auto text-sm transition-all duration-300">Ожидаю ваших действий...</pre>
-        </div>
-    </div>
+        <!-- Result area -->
+        <div id="result" class="bg-gray-50 rounded-lg p-6 shadow-inner transition-all duration-300">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Результат:</h2>
+            <pre id="resultPre" class="bg-gray-100 text-gray-800 p-4 rounded-md overflow-x-auto text-sm transition-all duration-300">Ожидаю ваших действий...</pre>
+        </div>
+    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const baseUrlInput = document.getElementById('baseUrl');
-            const initDataInput = document.getElementById('initData');
-            const authBtn = document.getElementById('authBtn');
-            const protectedBtn = document.getElementById('protectedBtn');
-            const resultPre = document.getElementById('resultPre');
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const baseUrlInput = document.getElementById('baseUrl');
+            const initDataInput = document.getElementById('initData');
+            const authBtn = document.getElementById('authBtn');
+            const protectedBtn = document.getElementById('protectedBtn');
+            const resultPre = document.getElementById('resultPre');
 
-            // Устанавливаем базовый URL по умолчанию
-            baseUrlInput.value = "http://127.0.0.1:8001";
+            // Устанавливаем базовый URL по умолчанию
+            baseUrlInput.value = "http://127.0.0.1:8001";
 
-            // Автоматически заполняем initData, если находимся в Telegram Web App
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-                initDataInput.value = window.Telegram.WebApp.initData;
-                showMessage("success", "initData из Telegram Web App успешно загружена.");
-            } else {
-                showMessage("info", "initData не найдена. Пожалуйста, вставьте её вручную.");
-            }
+            // Автоматически заполняем initData, если находимся в Telegram Web App
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+                initDataInput.value = window.Telegram.WebApp.initData;
+                showMessage("success", "initData из Telegram Web App успешно загружена.");
+            } else {
+                showMessage("info", "initData не найдена. Пожалуйста, вставьте её вручную.");
+            }
 
-            // Функция для отображения сообщений
-            function showMessage(type, message) {
-                let color = '';
-                switch (type) {
-                    case 'info':
-                        color = 'bg-blue-100 text-blue-800';
-                        break;
-                    case 'success':
-                        color = 'bg-green-100 text-green-800';
-                        break;
-                    case 'error':
-                        color = 'bg-red-100 text-red-800';
-                        break;
-                    case 'warning':
-                        color = 'bg-yellow-100 text-yellow-800';
-                        break;
-                }
-                const msg = document.createElement('div');
-                msg.className = `p-3 rounded-md mb-4 font-medium ${color} transition duration-300 transform scale-95 opacity-0 animate-fade-in`;
-                msg.textContent = message;
-                resultPre.parentNode.insertBefore(msg, resultPre);
-                setTimeout(() => msg.style.transform = 'scale(1)', 10);
-                setTimeout(() => msg.style.opacity = '1', 10);
-            }
+            // Функция для отображения сообщений
+            function showMessage(type, message) {
+                let color = '';
+                switch (type) {
+                    case 'info':
+                        color = 'bg-blue-100 text-blue-800';
+                        break;
+                    case 'success':
+                        color = 'bg-green-100 text-green-800';
+                        break;
+                    case 'error':
+                        color = 'bg-red-100 text-red-800';
+                        break;
+                    case 'warning':
+                        color = 'bg-yellow-100 text-yellow-800';
+                        break;
+                }
+                const msg = document.createElement('div');
+                msg.className = `p-3 rounded-md mb-4 font-medium ${color} transition duration-300 transform scale-95 opacity-0 animate-fade-in`;
+                msg.textContent = message;
+                resultPre.parentNode.insertBefore(msg, resultPre);
+                setTimeout(() => msg.style.transform = 'scale(1)', 10);
+                setTimeout(() => msg.style.opacity = '1', 10);
+            }
 
-            // Функция для обновления отображения JSON-ответа
-            function updateResult(data, error = false) {
-                resultPre.textContent = JSON.stringify(data, null, 2);
-                if (error) {
-                    resultPre.classList.add('text-red-600');
-                    resultPre.classList.remove('text-gray-800');
-                } else {
-                    resultPre.classList.remove('text-red-600');
-                    resultPre.classList.add('text-gray-800');
-                }
-            }
+            // Функция для обновления отображения JSON-ответа
+            function updateResult(data, error = false) {
+                resultPre.textContent = JSON.stringify(data, null, 2);
+                if (error) {
+                    resultPre.classList.add('text-red-600');
+                    resultPre.classList.remove('text-gray-800');
+                } else {
+                    resultPre.classList.remove('text-red-600');
+                    resultPre.classList.add('text-gray-800');
+                }
+            }
 
-            // Обработчик кнопки "Отправить initData"
-            authBtn.addEventListener('click', async () => {
-                const baseUrl = baseUrlInput.value;
-                const initData = initDataInput.value;
+            // Обработчик кнопки "Отправить initData"
+            authBtn.addEventListener('click', async () => {
+                const baseUrl = baseUrlInput.value;
+                const initData = initDataInput.value;
 
-                if (!baseUrl || !initData) {
-                    showMessage("error", "Пожалуйста, заполните все поля.");
-                    return;
-                }
+                if (!baseUrl || !initData) {
+                    showMessage("error", "Пожалуйста, заполните все поля.");
+                    return;
+                }
 
-                try {
-                    showMessage("info", "Отправка initData...");
-                    const response = await fetch(`${baseUrl}/auth/signin`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        // Здесь мы форматируем данные в JSON-объект, который ожидает FastAPI
-                        body: JSON.stringify({ init_data: initData }),
-                    });
-                    const data = await response.json();
+                try {
+                    showMessage("info", "Отправка initData...");
+                    const response = await fetch(`${baseUrl}/auth/signin`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        // Здесь мы форматируем данные в JSON-объект, который ожидает FastAPI
+                        body: JSON.stringify({ init_data: initData }),
+                        // --- ИЗМЕНЕНИЕ: Включаем cookies в запрос для кросс-доменных запросов ---
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
 
-                    if (response.ok) {
-                        updateResult(data);
-                        showMessage("success", "Успешная авторизация! Теперь попробуйте проверить защищённый роут.");
-                    } else {
-                        updateResult(data, true);
-                        showMessage("error", `Ошибка: ${data.detail || 'Неизвестная ошибка'}`);
-                    }
-                } catch (error) {
-                    updateResult({ error: error.message }, true);
-                    showMessage("error", `Не удалось соединиться с сервером: ${error.message}`);
-                }
-            });
+                    if (response.ok) {
+                        updateResult(data);
+                        showMessage("success", "Успешная авторизация! Теперь попробуйте проверить защищённый роут.");
+                    } else {
+                        updateResult(data, true);
+                        showMessage("error", `Ошибка: ${data.detail || 'Неизвестная ошибка'}`);
+                    }
+                } catch (error) {
+                    updateResult({ error: error.message }, true);
+                    showMessage("error", `Не удалось соединиться с сервером: ${error.message}`);
+                }
+            });
 
-            // Обработчик кнопки "Проверить защищённый роут"
-            protectedBtn.addEventListener('click', async () => {
-                const baseUrl = baseUrlInput.value;
+            // Обработчик кнопки "Проверить защищённый роут"
+            protectedBtn.addEventListener('click', async () => {
+                const baseUrl = baseUrlInput.value;
 
-                if (!baseUrl) {
-                    showMessage("error", "Пожалуйста, укажите базовый URL бэкенда.");
-                    return;
-                }
+                if (!baseUrl) {
+                    showMessage("error", "Пожалуйста, укажите базовый URL бэкенда.");
+                    return;
+                }
 
-                try {
-                    showMessage("info", "Проверка защищённого роута...");
-                    const response = await fetch(`${baseUrl}/auth/protected`, {
-                        method: 'GET',
-                        // --- ИЗМЕНЕНИЕ: Включаем cookies в запрос для кросс-доменных запросов ---
-                        credentials: 'include'
-                    });
-                    const data = await response.json();
+                try {
+                    showMessage("info", "Проверка защищённого роута...");
+                    const response = await fetch(`${baseUrl}/auth/protected`, {
+                        method: 'GET',
+                        // --- ИЗМЕНЕНИЕ: Включаем cookies в запрос для кросс-доменных запросов ---
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
 
-                    if (response.ok) {
-                        updateResult(data);
-                        showMessage("success", `Доступ разрешён: ${data.message}`);
-                    } else {
-                        updateResult(data, true);
-                        showMessage("error", `Доступ запрещён: ${data.detail || 'Неизвестная ошибка'}`);
-                    }
-                } catch (error) {
-                    updateResult({ error: error.message }, true);
-                    showMessage("error", `Не удалось соединиться с сервером: ${error.message}`);
-                }
-            });
-        });
-    </script>
+                    if (response.ok) {
+                        updateResult(data);
+                        showMessage("success", `Доступ разрешён: ${data.message}`);
+                    } else {
+                        updateResult(data, true);
+                        showMessage("error", `Доступ запрещён: ${data.detail || 'Неизвестная ошибка'}`);
+                    }
+                } catch (error) {
+                    updateResult({ error: error.message }, true);
+                    showMessage("error", `Не удалось соединиться с сервером: ${error.message}`);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
