@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Web App Auth Test</title>
+    <!-- Подключаем Tailwind CSS для красивого дизайна -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Необходимый скрипт для доступа к Telegram.WebApp -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -12,6 +13,19 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
+        }
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out forwards;
         }
     </style>
 </head>
@@ -66,10 +80,10 @@
             const protectedBtn = document.getElementById('protectedBtn');
             const resultPre = document.getElementById('resultPre');
 
-            // Set default base URL to port 8001 as requested
+            // Устанавливаем базовый URL по умолчанию
             baseUrlInput.value = "http://127.0.0.1:8001";
 
-            // Automatically fill initData if running inside Telegram Web App
+            // Автоматически заполняем initData, если находимся в Telegram Web App
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
                 initDataInput.value = window.Telegram.WebApp.initData;
                 showMessage("success", "initData из Telegram Web App успешно загружена.");
@@ -77,6 +91,7 @@
                 showMessage("info", "initData не найдена. Пожалуйста, вставьте её вручную.");
             }
 
+            // Функция для отображения сообщений
             function showMessage(type, message) {
                 let color = '';
                 switch (type) {
@@ -101,6 +116,7 @@
                 setTimeout(() => msg.style.opacity = '1', 10);
             }
 
+            // Функция для обновления отображения JSON-ответа
             function updateResult(data, error = false) {
                 resultPre.textContent = JSON.stringify(data, null, 2);
                 if (error) {
@@ -112,6 +128,7 @@
                 }
             }
 
+            // Обработчик кнопки "Отправить initData"
             authBtn.addEventListener('click', async () => {
                 const baseUrl = baseUrlInput.value;
                 const initData = initDataInput.value;
@@ -128,6 +145,7 @@
                         headers: {
                             'Content-Type': 'application/json',
                         },
+                        // Здесь мы форматируем данные в JSON-объект, который ожидает FastAPI
                         body: JSON.stringify({ init_data: initData }),
                     });
                     const data = await response.json();
@@ -145,6 +163,7 @@
                 }
             });
 
+            // Обработчик кнопки "Проверить защищённый роут"
             protectedBtn.addEventListener('click', async () => {
                 const baseUrl = baseUrlInput.value;
 
@@ -157,7 +176,8 @@
                     showMessage("info", "Проверка защищённого роута...");
                     const response = await fetch(`${baseUrl}/auth/protected`, {
                         method: 'GET',
-                        // Сookie будут отправлены автоматически браузером
+                        // --- ИЗМЕНЕНИЕ: Включаем cookies в запрос для кросс-доменных запросов ---
+                        credentials: 'include'
                     });
                     const data = await response.json();
 
