@@ -3,175 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тестовая аутентификация Telegram Mini App</title>
+    <title>Telegram Web App Auth Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f9;
-        }
-        .container {
-            background-color: #fff;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 1.5rem;
-        }
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        button {
-            padding: 1rem;
-            font-size: 1rem;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        #auth-btn {
-            background-color: #0088cc;
-        }
-        #auth-btn:hover {
-            background-color: #006699;
-        }
-        #protected-btn {
-            background-color: #28a745;
-        }
-        #protected-btn:hover {
-            background-color: #218838;
-        }
-        #status {
-            margin-top: 1.5rem;
-            font-weight: bold;
-            color: #555;
-            min-height: 20px;
-        }
-        #error-message {
-            margin-top: 1.5rem;
-            color: #dc3545;
-            font-weight: bold;
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Аутентификация Telegram</h1>
-        <div class="btn-group">
-            <button id="auth-btn">1. Авторизоваться</button>
-            <button id="protected-btn">2. Проверить доступ</button>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Telegram Web App Auth Test</h1>
+        <p class="text-gray-600 text-center mb-8">
+            Этот клиент поможет вам проверить, как ваш бэкенд обрабатывает `initData` из Telegram.
+        </p>
+
+        <!-- Form for input -->
+        <div class="space-y-6 mb-8">
+            <div>
+                <label for="baseUrl" class="block text-sm font-medium text-gray-700 mb-1">
+                    Базовый URL бэкенда (например: https://example.com)
+                </label>
+                <input type="url" id="baseUrl" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="http://127.0.0.1:8001">
+            </div>
+            <div>
+                <label for="initData" class="block text-sm font-medium text-gray-700 mb-1">
+                    Ваш initData из Telegram Web App
+                </label>
+                <textarea id="initData" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="Получите initData из Telegram.">
+                </textarea>
+                <p class="text-xs text-gray-500 mt-2">
+                    Вставьте сюда полный initData, полученный из `window.Telegram.WebApp.initData`. Если вы открыли эту страницу в самом Web App, она будет заполнена автоматически.
+                </p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <button id="authBtn" class="flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-300 transform hover:scale-105">
+                    Отправить initData
+                </button>
+                <button id="protectedBtn" class="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition duration-300 transform hover:scale-105">
+                    Проверить защищённый роут
+                </button>
+            </div>
         </div>
-        <div id="status"></div>
-        <div id="error-message"></div>
+
+        <!-- Result area -->
+        <div id="result" class="bg-gray-50 rounded-lg p-6 shadow-inner transition-all duration-300">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Результат:</h2>
+            <pre id="resultPre" class="bg-gray-100 text-gray-800 p-4 rounded-md overflow-x-auto text-sm transition-all duration-300">Ожидаю ваших действий...</pre>
+        </div>
     </div>
 
-<script>
-    const BACKEND_URL = 'http://127.0.0.1:8001';
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const baseUrlInput = document.getElementById('baseUrl');
+            const initDataInput = document.getElementById('initData');
+            const authBtn = document.getElementById('authBtn');
+            const protectedBtn = document.getElementById('protectedBtn');
+            const resultPre = document.getElementById('resultPre');
 
-    const authBtn = document.getElementById('auth-btn');
-    const protectedBtn = document.getElementById('protected-btn');
-    const statusDiv = document.getElementById('status');
-    const errorDiv = document.getElementById('error-message');
+            // Set default base URL
+            baseUrlInput.value = window.location.origin;
 
-    function waitForWebApp() {
-        return new Promise(resolve => {
-            const check = () => {
-                if (window.Telegram?.WebApp) {
-                    resolve(window.Telegram.WebApp);
-                } else {
-                    setTimeout(check, 100);
+            // Automatically fill initData if running inside Telegram Web App
+            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+                initDataInput.value = window.Telegram.WebApp.initData;
+                showMessage("success", "initData из Telegram Web App успешно загружена.");
+            } else {
+                showMessage("info", "initData не найдена. Пожалуйста, вставьте её вручную.");
+            }
+
+            function showMessage(type, message) {
+                let color = '';
+                switch (type) {
+                    case 'info':
+                        color = 'bg-blue-100 text-blue-800';
+                        break;
+                    case 'success':
+                        color = 'bg-green-100 text-green-800';
+                        break;
+                    case 'error':
+                        color = 'bg-red-100 text-red-800';
+                        break;
+                    case 'warning':
+                        color = 'bg-yellow-100 text-yellow-800';
+                        break;
                 }
-            };
-            check();
+                const msg = document.createElement('div');
+                msg.className = `p-3 rounded-md mb-4 font-medium ${color} transition duration-300 transform scale-95 opacity-0 animate-fade-in`;
+                msg.textContent = message;
+                resultPre.parentNode.insertBefore(msg, resultPre);
+                setTimeout(() => msg.style.transform = 'scale(1)', 10);
+                setTimeout(() => msg.style.opacity = '1', 10);
+            }
+
+            function updateResult(data, error = false) {
+                resultPre.textContent = JSON.stringify(data, null, 2);
+                if (error) {
+                    resultPre.classList.add('text-red-600');
+                    resultPre.classList.remove('text-gray-800');
+                } else {
+                    resultPre.classList.remove('text-red-600');
+                    resultPre.classList.add('text-gray-800');
+                }
+            }
+
+            authBtn.addEventListener('click', async () => {
+                const baseUrl = baseUrlInput.value;
+                const initData = initDataInput.value;
+
+                if (!baseUrl || !initData) {
+                    showMessage("error", "Пожалуйста, заполните все поля.");
+                    return;
+                }
+
+                try {
+                    showMessage("info", "Отправка initData...");
+                    const response = await fetch(`${baseUrl}/auth/signin`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ init_data: initData }),
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        updateResult(data);
+                        showMessage("success", "Успешная авторизация! Теперь попробуйте проверить защищённый роут.");
+                    } else {
+                        updateResult(data, true);
+                        showMessage("error", `Ошибка: ${data.detail || 'Неизвестная ошибка'}`);
+                    }
+                } catch (error) {
+                    updateResult({ error: error.message }, true);
+                    showMessage("error", `Не удалось соединиться с сервером: ${error.message}`);
+                }
+            });
+
+            protectedBtn.addEventListener('click', async () => {
+                const baseUrl = baseUrlInput.value;
+
+                if (!baseUrl) {
+                    showMessage("error", "Пожалуйста, укажите базовый URL бэкенда.");
+                    return;
+                }
+
+                try {
+                    showMessage("info", "Проверка защищённого роута...");
+                    const response = await fetch(`${baseUrl}/auth/protected`, {
+                        method: 'GET',
+                        // Сookie будут отправлены автоматически браузером
+                    });
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        updateResult(data);
+                        showMessage("success", `Доступ разрешён: ${data.message}`);
+                    } else {
+                        updateResult(data, true);
+                        showMessage("error", `Доступ запрещён: ${data.detail || 'Неизвестная ошибка'}`);
+                    }
+                } catch (error) {
+                    updateResult({ error: error.message }, true);
+                    showMessage("error", `Не удалось соединиться с сервером: ${error.message}`);
+                }
+            });
         });
-    }
-
-    async function main() {
-        const webApp = await waitForWebApp();
-
-        if (webApp.initData) {
-            statusDiv.textContent = '✅ Telegram Mini App успешно инициализировано.';
-        } else {
-            errorDiv.textContent = '❌ initData отсутствует. Убедитесь, что запускаете приложение через Telegram.';
-            // Оставляем кнопки активными, чтобы можно было проверить логику
-        }
-
-        authBtn.addEventListener('click', () => authenticate(webApp));
-        protectedBtn.addEventListener('click', () => checkProtected(webApp));
-    }
-
-    async function authenticate(webApp) {
-        if (!webApp.initData) {
-            errorDiv.textContent = '❌ Ошибка: initData отсутствует.';
-            return;
-        }
-        
-        statusDiv.textContent = 'Отправка данных на бэкенд...';
-        errorDiv.textContent = '';
-
-        try {
-            const response = await fetch(`${BACKEND_URL}/auth/signin`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({ init_data: webApp.initData }),
-            });
-
-            if (response.ok) {
-                statusDiv.textContent = '✅ Авторизация успешна!';
-                errorDiv.textContent = '';
-            } else {
-                const error = await response.json();
-                errorDiv.textContent = `❌ Ошибка авторизации: ${error.detail || 'Неизвестная ошибка'}`;
-                statusDiv.textContent = '';
-            }
-        } catch (error) {
-            errorDiv.textContent = `❌ Не удалось подключиться к бэкенду. ${error.message}`;
-            statusDiv.textContent = '';
-        }
-    }
-
-    async function checkProtected(webApp) {
-        statusDiv.textContent = 'Проверка защищенного эндпоинта...';
-        errorDiv.textContent = '';
-
-        try {
-            const response = await fetch(`${BACKEND_URL}/auth/protected`, {
-                method: 'GET',
-                credentials: 'include',
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                statusDiv.textContent = `✅ Доступ разрешен! Сообщение: "${data.message}"`;
-                errorDiv.textContent = '';
-            } else {
-                const error = await response.json();
-                errorDiv.textContent = `❌ Отказано в доступе. Ошибка: ${error.detail || 'Неизвестная ошибка'}`;
-                statusDiv.textContent = '';
-            }
-        } catch (error) {
-            errorDiv.textContent = `❌ Не удалось подключиться к бэкенду. ${error.message}`;
-            statusDiv.textContent = '';
-        }
-    }
-
-    main();
-</script>
+    </script>
 </body>
 </html>
