@@ -1,115 +1,43 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тестовая авторизация Telegram Mini App</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f9;
-        }
-        .container {
-            background-color: #fff;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 1.5rem;
-        }
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        button {
-            padding: 1rem;
-            font-size: 1rem;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        #auth-btn {
-            background-color: #0088cc;
-        }
-        #auth-btn:hover {
-            background-color: #006699;
-        }
-        #protected-btn {
-            background-color: #28a745;
-        }
-        #protected-btn:hover {
-            background-color: #218838;
-        }
-        #status {
-            margin-top: 1.5rem;
-            font-weight: bold;
-            color: #555;
-            min-height: 20px;
-        }
-        #error-message {
-            margin-top: 1.5rem;
-            color: #dc3545;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Аутентификация Telegram</h1>
-        <div class="btn-group">
-            <button id="auth-btn">1. Авторизоваться</button>
-            <button id="protected-btn">2. Проверить доступ</button>
-        </div>
-        <div id="status"></div>
-        <div id="error-message"></div>
-    </div>
+<script>
+    const BACKEND_URL = 'http://127.0.0.1:8001';
 
-    <script>
-        // Укажите URL вашего бэкенда
-        const BACKEND_URL = 'http://127.0.0.1:8001';
+    const authBtn = document.getElementById('auth-btn');
+    const protectedBtn = document.getElementById('protected-btn');
+    const statusDiv = document.getElementById('status');
+    const errorDiv = document.getElementById('error-message');
 
-        const authBtn = document.getElementById('auth-btn');
-        const protectedBtn = document.getElementById('protected-btn');
-        const statusDiv = document.getElementById('status');
-        const errorDiv = document.getElementById('error-message');
-
+    // Обертка для проверки загрузки скрипта Telegram
+    function initializeApp() {
         const webApp = window.Telegram?.WebApp;
 
         if (!webApp) {
-            errorDiv.textContent = 'Ошибка: Код запущен вне Telegram Mini App.';
+            // Если скрипт Telegram ещё не загрузился, попробуем снова через 100 мс
+            setTimeout(initializeApp, 100);
+            return;
         }
 
-        async function authenticate() {
-            if (!webApp || !webApp.initData) {
-                errorDiv.textContent = 'Ошибка: initData отсутствует.';
-                return;
-            }
+        // Если initData отсутствует, это означает, что Mini App запущено не из Telegram
+        if (!webApp.initData) {
+            errorDiv.textContent = '❌ Ошибка: initData отсутствует. Убедитесь, что запускаете приложение из клиента Telegram.';
+            return;
+        }
 
+        authBtn.addEventListener('click', authenticate);
+        protectedBtn.addEventListener('click', checkProtected);
+
+        // Теперь у нас есть initData и можно работать
+        statusDiv.textContent = '✅ Telegram Mini App успешно инициализировано.';
+
+        async function authenticate() {
             statusDiv.textContent = 'Отправка данных на бэкенд...';
             errorDiv.textContent = '';
 
             try {
-                // Отправляем initData на /auth/signin
                 const response = await fetch(`${BACKEND_URL}/auth/signin`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    // Важно: 'include' для отправки и получения cookies
                     credentials: 'include',
                     body: JSON.stringify({ init_data: webApp.initData }),
                 });
@@ -123,7 +51,7 @@
                     statusDiv.textContent = '';
                 }
             } catch (error) {
-                errorDiv.textContent = `❌ Не удалось подключиться к бэкенду. Проверьте, что он запущен. ${error.message}`;
+                errorDiv.textContent = `❌ Не удалось подключиться к бэкенду. ${error.message}`;
                 statusDiv.textContent = '';
             }
         }
@@ -133,10 +61,8 @@
             errorDiv.textContent = '';
 
             try {
-                // Отправляем запрос на /auth/protected. Браузер автоматически прикрепит cookies.
                 const response = await fetch(`${BACKEND_URL}/auth/protected`, {
                     method: 'GET',
-                    // Важно: 'include' для отправки cookies
                     credentials: 'include',
                 });
 
@@ -154,9 +80,8 @@
                 statusDiv.textContent = '';
             }
         }
+    }
 
-        authBtn.addEventListener('click', authenticate);
-        protectedBtn.addEventListener('click', checkProtected);
-    </script>
-</body>
-</html>
+    // Запускаем инициализацию после загрузки DOM
+    document.addEventListener('DOMContentLoaded', initializeApp);
+</script>
