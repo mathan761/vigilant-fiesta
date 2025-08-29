@@ -96,9 +96,12 @@
         try {
             const res = await fetch('http://127.0.0.1:8003/me', {
                 method: 'GET',
-                credentials: 'include',
-                headers: { 'Accept': 'application/json' }
+                headers: {
+                    'Authorization': `Bearer ${jwtTokens.access_token}`,
+                    'Accept': 'application/json'
+                }
             });
+
             const text = await res.text();
             if (res.ok) {
                 showStatus("✅ Профиль получен", "success");
