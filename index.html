@@ -81,7 +81,7 @@
             const resultPre = document.getElementById('resultPre');
 
             // Устанавливаем базовый URL по умолчанию
-            baseUrlInput.value = "http://127.0.0.1:8001";
+            baseUrlInput.value = "http://127.0.0.1:8003";
 
             // Автоматически заполняем initData, если находимся в Telegram Web App
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
@@ -140,7 +140,7 @@
 
                 try {
                     showMessage("info", "Отправка initData...");
-                    const response = await fetch(`${baseUrl}/auth/signin`, {
+                    const response = await fetch(`${baseUrl}/auth/telegram`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -176,7 +176,7 @@
 
                 try {
                     showMessage("info", "Проверка защищённого роута...");
-                    const response = await fetch(`${baseUrl}/auth/protected`, {
+                    const response = await fetch(`${baseUrl}/auth/me`, {
                         method: 'GET',
                         // --- ИЗМЕНЕНИЕ: Включаем cookies в запрос для кросс-доменных запросов ---
                         credentials: 'include'
