@@ -1,147 +1,254 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Telegram Mini App Auth Demo</title>
-  <!-- Telegram WebApp SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; margin: 0; }
-    .wrap { max-width: 720px; margin: 0 auto; padding: 24px; }
-    h1 { font-size: 1.4rem; margin: 0 0 12px; }
-    .card { border: 1px solid rgba(0,0,0,.08); border-radius: 16px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); background: rgba(255,255,255,.75); backdrop-filter: blur(6px); }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    button { appearance: none; border: 0; border-radius: 12px; padding: 12px 16px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
-    button.primary { background: #2d62f0; color: #fff; }
-    button.secondary { background: #e9edf7; }
-    button:disabled { opacity: .6; cursor: not-allowed; }
-    .muted { opacity: .7; font-size: .9rem; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    textarea, input[type="text"] { width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,.12); padding: 10px 12px; box-sizing: border-box; }
-    pre { white-space: pre-wrap; word-wrap: break-word; background: rgba(0,0,0,.04); padding: 12px; border-radius: 12px; }
-    .ok { color: #0a7a31; }
-    .err { color: #b00020; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            transition: opacity 0.2s;
+        }
+
+        .button:hover {
+            opacity: 0.8;
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .info-block {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        .response-block {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.success {
+            color: #22c55e;
+        }
+
+        .status.error {
+            color: #ef4444;
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>Telegram Mini App → backend авторизация</h1>
-    <p class="muted">Страница берёт <span class="mono">initData</span> из <span class="mono">Telegram.WebApp</span> и отправляет на <span class="mono">http://127.0.0.1:8003/auth/telegram</span>. В ответ сервер должен установить cookie с JWT. Кнопка «/me» обращается к <span class="mono">http://127.0.0.1:8003/me</span> с этими cookie.</p>
+    <div class="container">
+        <h1 class="title">Telegram Mini App</h1>
+        
+        <div class="info-block">
+            <strong>Init Data готова:</strong> <span id="initDataStatus">Проверяется...</span>
+        </div>
 
-    <div class="card" style="margin-bottom:16px;">
-      <div class="row" style="justify-content:space-between;">
-        <div>Состояние: <span id="state" class="muted">инициализация…</span></div>
-        <div><small class="muted">Внутри Telegram: <span id="inTg">—</span></small></div>
-      </div>
-      <details style="margin-top:10px;">
-        <summary>Показать initData / отладка</summary>
-        <label class="muted">initData (из Telegram, только для чтения):</label>
-        <pre id="initDataView" class="mono">—</pre>
-        <label class="muted">initData (для локального теста вне Telegram):</label>
-        <textarea id="manualInitData" rows="3" placeholder="auth_date=...&query_id=...&hash=... (сырой initData)"></textarea>
-      </details>
+        <button class="button" id="authButton" onclick="authenticate()">
+            🔐 Авторизоваться
+        </button>
+
+        <button class="button" id="profileButton" onclick="getProfile()" disabled>
+            👤 Получить профиль
+        </button>
+
+        <div id="status" class="status"></div>
+        
+        <div id="response" class="response-block" style="display: none;"></div>
     </div>
 
-    <div class="card">
-      <div class="row">
-        <button id="btnAuth" class="primary">Отправить initData на /auth/telegram</button>
-        <button id="btnMe" class="secondary" disabled>GET /me</button>
-      </div>
-      <div id="result" style="margin-top:14px;"></div>
-    </div>
-  </div>
-
-  <script>
-    const tg = window.Telegram?.WebApp;
-    const UI = {
-      state: document.getElementById('state'),
-      inTg: document.getElementById('inTg'),
-      initDataView: document.getElementById('initDataView'),
-      manualInitData: document.getElementById('manualInitData'),
-      btnAuth: document.getElementById('btnAuth'),
-      btnMe: document.getElementById('btnMe'),
-      result: document.getElementById('result'),
-    };
-
-    // Determine initData
-    const isInTelegram = Boolean(tg && (tg.initData || tg.initDataUnsafe));
-    UI.inTg.textContent = isInTelegram ? 'да' : 'нет';
-
-    // Try to expand web app
-    try { tg?.expand?.(); } catch {}
-
-    // Show init data for debug (never send unsafe to backend!)
-    const rawInitData = tg?.initData ?? '';
-    UI.initDataView.textContent = rawInitData || '—';
-
-    UI.state.textContent = isInTelegram ? 'готово' : 'режим вне Telegram (используйте поле «для локального теста» или откройте в WebApp)';
-
-    // Helpers
-    function show(html, cls) {
-      UI.result.innerHTML = `<div class="${cls||''}">${html}</div>`;
-    }
-    function escapeHTML(s){ return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
-
-    // Endpoints
-    const BASE = 'http://127.0.0.1:8003';
-    const AUTH_URL = `${BASE}/auth/telegram`;
-    const ME_URL = `${BASE}/me`;
-
-    // AUTH button
-    UI.btnAuth.addEventListener('click', async () => {
-      const initDataToSend = (rawInitData && isInTelegram) ? rawInitData : UI.manualInitData.value.trim();
-      if (!initDataToSend) {
-        show('initData пустой. Откройте страницу в Telegram Mini App или вставьте initData вручную.', 'err');
-        return;
-      }
-      UI.btnAuth.disabled = true;
-      show('Отправка на /auth/telegram…');
-      try {
-        // Отправляем как x-www-form-urlencoded: init_data=<raw initData>
-        const body = new URLSearchParams({ init_data: initDataToSend });
-        const res = await fetch(AUTH_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body,
-          credentials: 'include', // важно: получаем/передаём cookie с JWT
-        });
-        const text = await res.text();
-        const ok = res.ok;
-        show(`<div>${ok ? '✔️ Успех' : '❌ Ошибка'} (${res.status})</div><pre class="mono">${escapeHTML(text)}</pre>`, ok ? 'ok' : 'err');
-        if (ok) {
-          // Разблокируем /me — сервер должен был установить cookie
-          UI.btnMe.disabled = false;
+    <script>
+        let jwtTokens = null;
+        
+        // Инициализация Telegram Web App
+        window.Telegram.WebApp.ready();
+        
+        // Проверяем доступность init data
+        function checkInitData() {
+            const initData = window.Telegram.WebApp.initData;
+            const statusElement = document.getElementById('initDataStatus');
+            
+            if (initData) {
+                statusElement.textContent = '✅ Доступна';
+                statusElement.style.color = '#22c55e';
+                document.getElementById('authButton').disabled = false;
+            } else {
+                statusElement.textContent = '❌ Недоступна';
+                statusElement.style.color = '#ef4444';
+                document.getElementById('authButton').disabled = true;
+            }
         }
-      } catch (e) {
-        console.error(e);
-        show(`Не удалось выполнить запрос: ${escapeHTML(e.message)}`, 'err');
-      } finally {
-        UI.btnAuth.disabled = false;
-      }
-    });
 
-    // ME button
-    UI.btnMe.addEventListener('click', async () => {
-      UI.btnMe.disabled = true;
-      show('GET /me…');
-      try {
-        const res = await fetch(ME_URL, {
-          method: 'GET',
-          credentials: 'include', // отправляем cookie с JWT
-          headers: { 'Accept': 'application/json' },
-        });
-        const text = await res.text();
-        const ok = res.ok;
-        show(`<div>${ok ? '✔️ /me' : '❌ /me'} (${res.status})</div><pre class="mono">${escapeHTML(text)}</pre>`, ok ? 'ok' : 'err');
-      } catch (e) {
-        console.error(e);
-        show(`Не удалось выполнить запрос к /me: ${escapeHTML(e.message)}`, 'err');
-      } finally {
-        UI.btnMe.disabled = false;
-      }
-    });
-  </script>
+        // Функция авторизации
+        async function authenticate() {
+            const button = document.getElementById('authButton');
+            const statusElement = document.getElementById('status');
+            const responseElement = document.getElementById('response');
+            
+            // Получаем init data
+            const initData = window.Telegram.WebApp.initData;
+            
+            if (!initData) {
+                showStatus('Ошибка: Init data недоступна', 'error');
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = '🔄 Авторизация...';
+            showStatus('Отправляем запрос на сервер...', '');
+
+            try {
+                const response = await fetch('http://127.0.0.1:8003/auth/telegram', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        initData: initData
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    jwtTokens = data;
+                    showStatus('✅ Авторизация успешна!', 'success');
+                    showResponse('Токены получены', JSON.stringify(data, null, 2));
+                    
+                    // Активируем кнопку профиля
+                    document.getElementById('profileButton').disabled = false;
+                } else {
+                    showStatus('❌ Ошибка авторизации', 'error');
+                    showResponse('Ошибка сервера', JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                showStatus('❌ Ошибка соединения', 'error');
+                showResponse('Ошибка', error.message);
+                console.error('Auth error:', error);
+            } finally {
+                button.disabled = false;
+                button.textContent = '🔐 Авторизоваться';
+            }
+        }
+
+        // Функция получения профиля
+        async function getProfile() {
+            const button = document.getElementById('profileButton');
+            const statusElement = document.getElementById('status');
+            const responseElement = document.getElementById('response');
+            
+            if (!jwtTokens || !jwtTokens.access_token) {
+                showStatus('Ошибка: Сначала выполните авторизацию', 'error');
+                return;
+            }
+
+            button.disabled = true;
+            button.textContent = '🔄 Загружаем профиль...';
+            showStatus('Получаем данные профиля...', '');
+
+            try {
+                const response = await fetch('http://127.0.0.1:8003/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${jwtTokens.access_token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showStatus('✅ Профиль получен!', 'success');
+                    showResponse('Данные профиля', JSON.stringify(data, null, 2));
+                } else {
+                    showStatus('❌ Ошибка получения профиля', 'error');
+                    showResponse('Ошибка сервера', JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                showStatus('❌ Ошибка соединения', 'error');
+                showResponse('Ошибка', error.message);
+                console.error('Profile error:', error);
+            } finally {
+                button.disabled = false;
+                button.textContent = '👤 Получить профиль';
+            }
+        }
+
+        // Функция показа статуса
+        function showStatus(message, type) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        // Функция показа ответа
+        function showResponse(title, content) {
+            const responseElement = document.getElementById('response');
+            responseElement.style.display = 'block';
+            responseElement.textContent = `${title}:\n\n${content}`;
+        }
+
+        // Проверяем init data при загрузке
+        checkInitData();
+        
+        // Настройка темы Telegram
+        document.body.style.background = window.Telegram.WebApp.themeParams.bg_color || '#ffffff';
+        document.body.style.color = window.Telegram.WebApp.themeParams.text_color || '#000000';
+    </script>
 </body>
 </html>
