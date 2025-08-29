@@ -1,201 +1,254 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Web App Auth Test</title>
-    <!-- Подключаем Tailwind CSS для красивого дизайна -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Необходимый скрипт для доступа к Telegram.WebApp -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-        @keyframes fade-in {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        .animate-fade-in {
-            animation: fade-in 0.3s ease-out forwards;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            transition: opacity 0.2s;
+        }
+
+        .button:hover {
+            opacity: 0.8;
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .info-block {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        .response-block {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .status.success {
+            color: #22c55e;
+        }
+
+        .status.error {
+            color: #ef4444;
+        }
+
+        .loading {
+            text-align: center;
+            color: var(--tg-theme-hint-color, #999999);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Telegram Web App Auth Test</h1>
-        <p class="text-gray-600 text-center mb-8">
-            Этот клиент поможет вам проверить, как ваш бэкенд обрабатывает `initData` из Telegram.
-        </p>
+<body>
+    <div class="container">
+        <h1 class="title">Telegram Mini App</h1>
+        
+        <div class="info-block">
+            <strong>Init Data готова:</strong> <span id="initDataStatus">Проверяется...</span>
+        </div>
 
-        <!-- Form for input -->
-        <div class="space-y-6 mb-8">
-            <div>
-                <label for="baseUrl" class="block text-sm font-medium text-gray-700 mb-1">
-                    Базовый URL бэкенда
-                </label>
-                <input type="url" id="baseUrl" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="http://127.0.0.1:8001">
-            </div>
-            <div>
-                <label for="initData" class="block text-sm font-medium text-gray-700 mb-1">
-                    Ваш initData из Telegram Web App
-                </label>
-                <textarea id="initData" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200" placeholder="Получите initData из Telegram.">
-                </textarea>
-                <p class="text-xs text-gray-500 mt-2">
-                    Вставьте сюда полный initData, полученный из `window.Telegram.WebApp.initData`. Если вы открыли эту страницу в самом Web App, она будет заполнена автоматически.
-                </p>
-            </div>
+        <button class="button" id="authButton" onclick="authenticate()">
+            🔐 Авторизоваться
+        </button>
 
-            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <button id="authBtn" class="flex-1 bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-300 transform hover:scale-105">
-                    Отправить initData
-                </button>
-                <button id="protectedBtn" class="flex-1 bg-green-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 transition duration-300 transform hover:scale-105">
-                    Проверить защищённый роут
-                </button>
-            </div>
-        </div>
+        <button class="button" id="profileButton" onclick="getProfile()" disabled>
+            👤 Получить профиль
+        </button>
 
-        <!-- Result area -->
-        <div id="result" class="bg-gray-50 rounded-lg p-6 shadow-inner transition-all duration-300">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4">Результат:</h2>
-            <pre id="resultPre" class="bg-gray-100 text-gray-800 p-4 rounded-md overflow-x-auto text-sm transition-all duration-300">Ожидаю ваших действий...</pre>
-        </div>
-    </div>
+        <div id="status" class="status"></div>
+        
+        <div id="response" class="response-block" style="display: none;"></div>
+    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const baseUrlInput = document.getElementById('baseUrl');
-            const initDataInput = document.getElementById('initData');
-            const authBtn = document.getElementById('authBtn');
-            const protectedBtn = document.getElementById('protectedBtn');
-            const resultPre = document.getElementById('resultPre');
+    <script>
+        let jwtTokens = null;
+        
+        // Инициализация Telegram Web App
+        window.Telegram.WebApp.ready();
+        
+        // Проверяем доступность init data
+        function checkInitData() {
+            const initData = window.Telegram.WebApp.initData;
+            const statusElement = document.getElementById('initDataStatus');
+            
+            if (initData) {
+                statusElement.textContent = '✅ Доступна';
+                statusElement.style.color = '#22c55e';
+                document.getElementById('authButton').disabled = false;
+            } else {
+                statusElement.textContent = '❌ Недоступна';
+                statusElement.style.color = '#ef4444';
+                document.getElementById('authButton').disabled = true;
+            }
+        }
 
-            // Устанавливаем базовый URL по умолчанию
-            baseUrlInput.value = "http://127.0.0.1:8003";
+        // Функция авторизации
+        async function authenticate() {
+            const button = document.getElementById('authButton');
+            const statusElement = document.getElementById('status');
+            const responseElement = document.getElementById('response');
+            
+            // Получаем init data
+            const initData = window.Telegram.WebApp.initData;
+            
+            if (!initData) {
+                showStatus('Ошибка: Init data недоступна', 'error');
+                return;
+            }
 
-            // Автоматически заполняем initData, если находимся в Telegram Web App
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
-                initDataInput.value = window.Telegram.WebApp.initData;
-                showMessage("success", "initData из Telegram Web App успешно загружена.");
-            } else {
-                showMessage("info", "initData не найдена. Пожалуйста, вставьте её вручную.");
-            }
+            button.disabled = true;
+            button.textContent = '🔄 Авторизация...';
+            showStatus('Отправляем запрос на сервер...', '');
 
-            // Функция для отображения сообщений
-            function showMessage(type, message) {
-                let color = '';
-                switch (type) {
-                    case 'info':
-                        color = 'bg-blue-100 text-blue-800';
-                        break;
-                    case 'success':
-                        color = 'bg-green-100 text-green-800';
-                        break;
-                    case 'error':
-                        color = 'bg-red-100 text-red-800';
-                        break;
-                    case 'warning':
-                        color = 'bg-yellow-100 text-yellow-800';
-                        break;
-                }
-                const msg = document.createElement('div');
-                msg.className = `p-3 rounded-md mb-4 font-medium ${color} transition duration-300 transform scale-95 opacity-0 animate-fade-in`;
-                msg.textContent = message;
-                resultPre.parentNode.insertBefore(msg, resultPre);
-                setTimeout(() => msg.style.transform = 'scale(1)', 10);
-                setTimeout(() => msg.style.opacity = '1', 10);
-            }
+            try {
+                const response = await fetch('http://127.0.0.1:8003/auth/telegram', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        initData: initData
+                    })
+                });
 
-            // Функция для обновления отображения JSON-ответа
-            function updateResult(data, error = false) {
-                resultPre.textContent = JSON.stringify(data, null, 2);
-                if (error) {
-                    resultPre.classList.add('text-red-600');
-                    resultPre.classList.remove('text-gray-800');
-                } else {
-                    resultPre.classList.remove('text-red-600');
-                    resultPre.classList.add('text-gray-800');
-                }
-            }
+                const data = await response.json();
+                
+                if (response.ok) {
+                    jwtTokens = data;
+                    showStatus('✅ Авторизация успешна!', 'success');
+                    showResponse('Токены получены', JSON.stringify(data, null, 2));
+                    
+                    // Активируем кнопку профиля
+                    document.getElementById('profileButton').disabled = false;
+                } else {
+                    showStatus('❌ Ошибка авторизации', 'error');
+                    showResponse('Ошибка сервера', JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                showStatus('❌ Ошибка соединения', 'error');
+                showResponse('Ошибка', error.message);
+                console.error('Auth error:', error);
+            } finally {
+                button.disabled = false;
+                button.textContent = '🔐 Авторизоваться';
+            }
+        }
 
-            // Обработчик кнопки "Отправить initData"
-            authBtn.addEventListener('click', async () => {
-                const baseUrl = baseUrlInput.value;
-                const initData = initDataInput.value;
+        // Функция получения профиля
+        async function getProfile() {
+            const button = document.getElementById('profileButton');
+            const statusElement = document.getElementById('status');
+            const responseElement = document.getElementById('response');
+            
+            if (!jwtTokens || !jwtTokens.access_token) {
+                showStatus('Ошибка: Сначала выполните авторизацию', 'error');
+                return;
+            }
 
-                if (!baseUrl || !initData) {
-                    showMessage("error", "Пожалуйста, заполните все поля.");
-                    return;
-                }
+            button.disabled = true;
+            button.textContent = '🔄 Загружаем профиль...';
+            showStatus('Получаем данные профиля...', '');
 
-                try {
-                    showMessage("info", "Отправка initData...");
-                    const response = await fetch(`${baseUrl}/auth/telegram`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        // Здесь мы форматируем данные в JSON-объект, который ожидает FastAPI
-                        body: JSON.stringify({ init_data: initData }),
-                        // --- ИЗМЕНЕНИЕ: Включаем cookies в запрос для кросс-доменных запросов ---
-                        credentials: 'include'
-                    });
-                    const data = await response.json();
+            try {
+                const response = await fetch('http://127.0.0.1:8003/me', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${jwtTokens.access_token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
 
-                    if (response.ok) {
-                        updateResult(data);
-                        showMessage("success", "Успешная авторизация! Теперь попробуйте проверить защищённый роут.");
-                    } else {
-                        updateResult(data, true);
-                        showMessage("error", `Ошибка: ${data.detail || 'Неизвестная ошибка'}`);
-                    }
-                } catch (error) {
-                    updateResult({ error: error.message }, true);
-                    showMessage("error", `Не удалось соединиться с сервером: ${error.message}`);
-                }
-            });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showStatus('✅ Профиль получен!', 'success');
+                    showResponse('Данные профиля', JSON.stringify(data, null, 2));
+                } else {
+                    showStatus('❌ Ошибка получения профиля', 'error');
+                    showResponse('Ошибка сервера', JSON.stringify(data, null, 2));
+                }
+            } catch (error) {
+                showStatus('❌ Ошибка соединения', 'error');
+                showResponse('Ошибка', error.message);
+                console.error('Profile error:', error);
+            } finally {
+                button.disabled = false;
+                button.textContent = '👤 Получить профиль';
+            }
+        }
 
-            // Обработчик кнопки "Проверить защищённый роут"
-            protectedBtn.addEventListener('click', async () => {
-                const baseUrl = baseUrlInput.value;
+        // Функция показа статуса
+        function showStatus(message, type) {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
 
-                if (!baseUrl) {
-                    showMessage("error", "Пожалуйста, укажите базовый URL бэкенда.");
-                    return;
-                }
+        // Функция показа ответа
+        function showResponse(title, content) {
+            const responseElement = document.getElementById('response');
+            responseElement.style.display = 'block';
+            responseElement.textContent = `${title}:\n\n${content}`;
+        }
 
-                try {
-                    showMessage("info", "Проверка защищённого роута...");
-                    const response = await fetch(`${baseUrl}/auth/me`, {
-                        method: 'GET',
-                        // --- ИЗМЕНЕНИЕ: Включаем cookies в запрос для кросс-доменных запросов ---
-                        credentials: 'include'
-                    });
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        updateResult(data);
-                        showMessage("success", `Доступ разрешён: ${data.message}`);
-                    } else {
-                        updateResult(data, true);
-                        showMessage("error", `Доступ запрещён: ${data.detail || 'Неизвестная ошибка'}`);
-                    }
-                } catch (error) {
-                    updateResult({ error: error.message }, true);
-                    showMessage("error", `Не удалось соединиться с сервером: ${error.message}`);
-                }
-            });
-        });
-    </script>
+        // Проверяем init data при загрузке
+        checkInitData();
+        
+        // Настройка темы Telegram
+        document.body.style.background = window.Telegram.WebApp.themeParams.bg_color || '#ffffff';
+        document.body.style.color = window.Telegram.WebApp.themeParams.text_color || '#000000';
+    </script>
 </body>
 </html>
