@@ -1,122 +1,126 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-        .container { max-width: 400px; margin: auto; }
-        .button { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-        .primary { background: #2481cc; color: white; }
-        .secondary { background: #e0e0e0; }
-        .status { margin: 10px 0; font-weight: bold; }
-        .success { color: green; }
-        .error { color: red; }
-        pre { background: #f3f3f3; padding: 10px; border-radius: 6px; white-space: pre-wrap; word-wrap: break-word; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Telegram Mini App</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+    body { margin:0; padding:20px; font-family: Arial, sans-serif; }
+    .container { max-width:400px; margin:auto; }
+    .button { width:100%; padding:15px; margin:10px 0; border:none; border-radius:8px; font-size:16px; cursor:pointer; }
+    .primary { background:#2481cc; color:white; }
+    .secondary { background:#e0e0e0; }
+    .status { margin:10px 0; font-weight:bold; }
+    .success { color:green; }
+    .error { color:red; }
+    pre { background:#f3f3f3; padding:10px; border-radius:6px; white-space:pre-wrap; word-wrap:break-word; }
+</style>
 </head>
 <body>
 <div class="container">
     <h1>Telegram Mini App</h1>
     <p>Init Data: <span id="initStatus">Проверяется...</span></p>
+
     <button id="authBtn" class="button primary" onclick="authenticate()" disabled>🔐 Авторизоваться</button>
     <button id="meBtn" class="button secondary" onclick="getProfile()" disabled>👤 Получить профиль</button>
+
     <div id="status" class="status"></div>
     <pre id="response" style="display:none;"></pre>
 </div>
 
 <script>
-    window.Telegram.WebApp.ready();
+window.Telegram.WebApp.ready();
 
-    const initData = window.Telegram.WebApp.initData;
-    const initStatus = document.getElementById('initStatus');
-    const authBtn = document.getElementById('authBtn');
-    const meBtn = document.getElementById('meBtn');
-    const statusEl = document.getElementById('status');
-    const responseEl = document.getElementById('response');
+const initData = window.Telegram.WebApp.initData;
+const initStatus = document.getElementById('initStatus');
+const authBtn = document.getElementById('authBtn');
+const meBtn = document.getElementById('meBtn');
+const statusEl = document.getElementById('status');
+const responseEl = document.getElementById('response');
 
-    if (initData) {
-        initStatus.textContent = "✅ Доступна";
-        initStatus.style.color = "green";
+// Проверяем init data
+if (initData) {
+    initStatus.textContent = "✅ Доступна";
+    initStatus.style.color = "green";
+    authBtn.disabled = false;
+} else {
+    initStatus.textContent = "❌ Недоступна";
+    initStatus.style.color = "red";
+}
+
+function showStatus(msg, type) {
+    statusEl.textContent = msg;
+    statusEl.className = `status ${type || ''}`;
+}
+
+function showResponse(content) {
+    responseEl.style.display = 'block';
+    responseEl.textContent = content;
+}
+
+// Авторизация: отправляем init_data на сервер
+async function authenticate() {
+    showStatus("🔄 Авторизация...", "");
+    responseEl.style.display = 'none';
+    authBtn.disabled = true;
+
+    try {
+        const body = new URLSearchParams({ init_data: initData });
+        const res = await fetch('http://127.0.0.1:8003/auth/telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body,
+            credentials: 'include'  // важно для cookie
+        });
+
+        const text = await res.text();
+
+        if (res.ok) {
+            showStatus("✅ Авторизация успешна", "success");
+            showResponse(text);
+            meBtn.disabled = false; // теперь можно запросить профиль
+        } else {
+            showStatus("❌ Ошибка авторизации", "error");
+            showResponse(text);
+        }
+    } catch (err) {
+        showStatus("❌ Ошибка соединения", "error");
+        showResponse(err.message);
+    } finally {
         authBtn.disabled = false;
-    } else {
-        initStatus.textContent = "❌ Недоступна";
-        initStatus.style.color = "red";
     }
+}
 
-    function showStatus(msg, type) {
-        statusEl.textContent = msg;
-        statusEl.className = `status ${type || ''}`;
-    }
-    function showResponse(content) {
-        responseEl.style.display = 'block';
-        responseEl.textContent = content;
-    }
+// Получение профиля через cookie
+async function getProfile() {
+    showStatus("🔄 Получаем профиль...", "");
+    responseEl.style.display = 'none';
+    meBtn.disabled = true;
 
-    async function authenticate() {
-        showStatus("Авторизация...", "");
-        responseEl.style.display = 'none';
-        authBtn.disabled = true;
+    try {
+        const res = await fetch('http://127.0.0.1:8003/me', {
+            method: 'GET',
+            credentials: 'include', // отправка cookie
+            headers: { 'Accept': 'application/json' }
+        });
 
-        try {
-            const body = new URLSearchParams({ init_data: initData });
-            const res = await fetch('http://127.0.0.1:8003/auth/telegram', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body,
-                credentials: 'include'
-            });
+        const text = await res.text();
 
-            const text = await res.text();
-            if (res.ok) {
-                showStatus("✅ Авторизация успешна", "success");
-                showResponse(text);
-                meBtn.disabled = true; // включим ниже, если куки пришли
-                // Обычно сервер ставит куки, поэтому кнопку /me можно активировать сразу:
-                meBtn.disabled = false;
-            } else {
-                showStatus("❌ Ошибка авторизации", "error");
-                showResponse(text);
-            }
-        } catch (err) {
-            showStatus("❌ Ошибка соединения", "error");
-            showResponse(err.message);
-        } finally {
-            authBtn.disabled = false;
+        if (res.ok) {
+            showStatus("✅ Профиль получен", "success");
+            showResponse(text);
+        } else {
+            showStatus("❌ Ошибка получения профиля", "error");
+            showResponse(text);
         }
+    } catch (err) {
+        showStatus("❌ Ошибка соединения", "error");
+        showResponse(err.message);
+    } finally {
+        meBtn.disabled = false;
     }
-
-    async function getProfile() {
-        showStatus("Запрос профиля...", "");
-        responseEl.style.display = 'none';
-        meBtn.disabled = true;
-
-        try {
-            const res = await fetch('http://127.0.0.1:8003/me', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${jwtTokens.access_token}`,
-                    'Accept': 'application/json'
-                }
-            });
-
-            const text = await res.text();
-            if (res.ok) {
-                showStatus("✅ Профиль получен", "success");
-                showResponse(text);
-            } else {
-                showStatus("❌ Ошибка получения профиля", "error");
-                showResponse(text);
-            }
-        } catch (err) {
-            showStatus("❌ Ошибка соединения", "error");
-            showResponse(err.message);
-        } finally {
-            meBtn.disabled = false;
-        }
-    }
+}
 </script>
 </body>
 </html>
